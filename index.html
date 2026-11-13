@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three Little Stories: interactive picture books for kids</title>
+  <meta name="description" content="Three original interactive picture books for young children: a Kerala monsoon boat, a Tamil Nadu kolam and a sleepy cloud. Tap, choose, find two endings each.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="brej-29">
+  <meta name="theme-color" content="#232a66">
+  <link rel="canonical" href="https://brej-29.github.io/Three-Little-Stories/">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Three Little Stories">
+  <meta property="og:title" content="Three Little Stories: interactive picture books for kids">
+  <meta property="og:description" content="Three original interactive picture books for young children: a Kerala monsoon boat, a Tamil Nadu kolam and a sleepy cloud. Tap, choose, find two endings each.">
+  <meta property="og:url" content="https://brej-29.github.io/Three-Little-Stories/">
+  <meta property="og:image" content="https://brej-29.github.io/Three-Little-Stories/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Three storybook covers: a canoe in the Kerala backwaters, a kolam on a Tamil Nadu doorstep, and a sleepy little cloud.">
+  <meta property="og:locale" content="en_IN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Three Little Stories: interactive picture books for kids">
+  <meta name="twitter:description" content="Three original interactive picture books for young children: a Kerala monsoon boat, a Tamil Nadu kolam and a sleepy cloud. Tap, choose, find two endings each.">
+  <meta name="twitter:image" content="https://brej-29.github.io/Three-Little-Stories/og-image.jpg">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://brej-29.github.io/Three-Little-Stories/#app",
+        "name": "Three Little Stories",
+        "url": "https://brej-29.github.io/Three-Little-Stories/",
+        "description": "Three original interactive picture books for young children: a Kerala monsoon boat, a Tamil Nadu kolam and a sleepy cloud. Tap, choose, find two endings each.",
+        "image": "https://brej-29.github.io/Three-Little-Stories/og-image.jpg",
+        "applicationCategory": "EntertainmentApplication",
+        "operatingSystem": "Any",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 3, "suggestedMaxAge": 8 },
+        "author": { "@type": "Person", "name": "brej-29", "url": "https://github.com/brej-29" },
+        "codeRepository": "https://github.com/brej-29/Three-Little-Stories",
+        "hasPart": [{ "@id": "https://brej-29.github.io/Three-Little-Stories/#ammu" }, { "@id": "https://brej-29.github.io/Three-Little-Stories/#meenu" }, { "@id": "https://brej-29.github.io/Three-Little-Stories/#puff" }]
+      },
+      { "@type": "Book", "@id": "https://brej-29.github.io/Three-Little-Stories/#ammu", "name": "Ammu and the Monsoon Boat", "inLanguage": "en", "genre": "Children's picture book",
+        "description": "A girl and her grandfather chase a paper boat through the Kerala backwaters in the first monsoon rain. Two endings.", "isAccessibleForFree": true },
+      { "@type": "Book", "@id": "https://brej-29.github.io/Three-Little-Stories/#meenu", "name": "Meenu and the Morning Kolam", "inLanguage": "en", "genre": "Children's picture book",
+        "description": "Before sunrise in a Tamil Nadu village, a girl and her grandmother draw a kolam at the doorstep. Two endings.", "isAccessibleForFree": true },
+      { "@type": "Book", "@id": "https://brej-29.github.io/Three-Little-Stories/#puff", "name": "Puff, the Sleepy Little Cloud", "inLanguage": "en", "genre": "Children's bedtime story",
+        "description": "A gentle bedtime story about a little cloud who cannot find a place to sleep. Two endings.", "isAccessibleForFree": true }
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the stories</a>
+
+  <header class="bar">
+    <button id="home" class="pill" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5l-7 7 7 7" /></svg><span>All stories</span>
+    </button>
+    <p id="barTitle" class="bar-title"></p>
+    <div class="controls" role="group" aria-label="Sound and motion">
+      <button id="tSound" class="tog" aria-pressed="true" title="Music and sound effects">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path class="on" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" /><path class="off" d="M16 9l6 6M22 9l-6 6" /></svg>
+        <span>Sound</span>
+      </button>
+      <button id="tRead" class="tog" aria-pressed="false" title="Read each page aloud">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6a3 3 0 013 3v11a2.5 2.5 0 00-2.500-2H4zM20 5h-4a3 3 0 00-3 3" /><path d="M13 19a2.500 2.500 0 012.500-2H20V5" /></svg>
+        <span>Read to me</span>
+      </button>
+      <button id="tCalm" class="tog" aria-pressed="false" title="Turn off moving pictures">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.500A8 8 0 019.500 4 8 8 0 1020 14.500z" /></svg>
+        <span>Calm motion</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="shelf" aria-labelledby="h1">
+      <h1 id="h1">Three Little Stories</h1>
+      <p class="lede">Pick a book. Tap the pictures. Choose what happens next.</p>
+      <div class="books" id="books"></div>
+      <noscript>
+        <p class="lede">These stories need JavaScript to turn their pages. Please turn it on and reload.</p>
+        <ul class="lede">
+          <li><b>Ammu and the Monsoon Boat</b>: a girl and her grandfather chase a paper boat through the Kerala backwaters.</li>
+          <li><b>Meenu and the Morning Kolam</b>: a girl and her grandmother draw a kolam at the doorstep of a Tamil Nadu village home.</li>
+          <li><b>Puff, the Sleepy Little Cloud</b>: a bedtime story about a cloud who cannot find a place to sleep.</li>
+        </ul>
+      </noscript>
+      <button id="grown" class="link">A note for grown-ups</button>
+    </section>
+
+    <section id="reader" hidden aria-label="Story">
+      <div class="stage" id="stage"></div>
+      <nav class="nav" aria-label="Pages">
+        <button id="prev" class="round" aria-label="Page before">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5l-7 7 7 7" /></svg>
+        </button>
+        <div class="mid">
+          <div class="dots" id="dots" role="img"></div>
+          <button id="hint" class="finds"></button>
+        </div>
+        <button id="next" class="round next" aria-label="Next page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5l7 7-7 7" /></svg>
+        </button>
+      </nav>
+    </section>
+  </main>
+
+  <dialog id="notes" aria-labelledby="notesH">
+    <h2 id="notesH">A note for grown-ups</h2>
+    <div id="notesBody"></div>
+    <p>These are original stories written for this book. They are inspired by real places and customs, but the characters and events are made up.</p>
+    <p>Every picture has things to tap, and each story has two endings. The book works with the sound off: every sound also appears as words on the page.</p>
+    <form method="dialog"><button class="btn">Close</button></form>
+  </dialog>
+
+  <script src="js/art.js"></script>
+  <script src="js/stories.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
