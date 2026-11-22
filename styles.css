@@ -151,8 +151,7 @@ dialog h2 { margin: 0 0 8px; font: 800 1.8rem/1 var(--display); }
 dialog h3 { margin: 18px 0 2px; font: 800 1.15rem/1.1 var(--display); }
 dialog p { margin: 0 0 10px; }
 dialog form { display: flex; justify-content: flex-end; margin-top: 16px; }
-#notesBody details { border-bottom: 1px solid #ddd4bf; }
-#notesBody summary { cursor: pointer; padding: 11px 2px; font-weight: 700; }
+#storyWords summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
 
 /* ---------- page turning ---------- */
 .turn-out { z-index: 2; animation: turn-out .85s ease-in-out forwards; }

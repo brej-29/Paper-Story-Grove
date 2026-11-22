@@ -99,14 +99,8 @@
   $('#paintEdition').onchange = changeEdition;
   $('#books').onclick = e => { const b = e.target.closest('.book'); if (b) openStory(b.dataset.story); };
 
-  const bookNotes = [
-    ...GROWNUPS,
-    ['Anu and the Last Little Lamp', 'During Karthigai Deepam, families in Tamil Nadu light small clay lamps. Paatti, Anu’s grandmother, lights the lamps in this story. Anu chooses how to welcome their neighbour home. Where would your child put a light for someone they love?'],
-    ['Dev and the Extra Banana Leaf', 'A sadya is a feast served on banana leaves. At this family’s Onam meal in Kerala, Dev needs a place for his cousin before the rice arrives. Try laying out pretend leaves with your fingers. Can you find room for one more?'],
-    ['Moss and the Kite That Sneezed', 'Moss is a dragon who mends kites. When his sneeze tears Mouse’s kite, the two friends work out how to mend it together. Trace the shape of your child’s new kite in the air, then give it a little breeze.']
-  ];
-  $('#notesBody').innerHTML = bookNotes.map(([title, note]) =>
-    `<details><summary>${esc(title)}</summary><p>${esc(note)}</p></details>`
+  $('#notesBody').innerHTML = GROWNUPS.slice(0, 2).map(([title, note]) =>
+    `<p><strong>${esc(title)}</strong><br>${esc(note)}</p>`
   ).join('');
   $('#grown').onclick = () => $('#notes').showModal();
 

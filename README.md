@@ -4,13 +4,18 @@ Six interactive picture books in English for young children and the grown-ups re
 
 [Open Paper Story Grove on GitHub Pages](https://brej-29.github.io/Paper-Story-Grove/)
 
-![The Paper Story Grove shelf, with Moss and Mouse on a pop-up book and a switch between Hand-drawn and Higgsfield editions](docs/media/paper-story-grove.png)
+![Desktop recording of the hand-drawn shelf opening Ammu’s book, tapping the frog in the rain and turning to the paper-boat page](docs/media/desktop-hand-drawn.gif)
 
 ## Choose an edition
 
 **Hand-drawn** opens by default with all six books. The pictures are built from layers of cut-paper-style SVG art. Rain falls, lamps flicker, and a kite tugs at its string. Touch a character or an object to discover what it does.
 
 **Higgsfield** opens a shelf of three books featuring Anu, Dev and Moss. Each of their 24 illustrated pages has its own painting. Twelve also have a short, silent animated clip that can be replayed. The words, choices and endings are shared with the hand-drawn edition.
+
+<p align="center">
+  <img src="docs/media/phone-painted.gif" width="310" alt="Phone recording showing the switch to Higgsfield, a tap on Anu’s last lamp and the turn to the next painted page">
+  <br><em>On a phone, Anu’s painting sits above the words. Tap the last lamp for a little welcome.</em>
+</p>
 
 ## On the shelf
 
