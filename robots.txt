@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://brej-29.github.io/Three-Little-Stories/sitemap.xml
+Sitemap: https://brej-29.github.io/Paper-Story-Grove/sitemap.xml

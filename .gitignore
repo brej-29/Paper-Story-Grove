@@ -1,3 +1,10 @@
 .claude/
 .DS_Store
 node_modules/
+
+# Disposable local browser verification profiles
+/tests/living-captures/browser-profile/
+/tests/living-captures/capture-profile/
+
+# Raw generated clips; the web-ready mp4 beside each painting is what ships
+/assets/stories/*/clips-raw/

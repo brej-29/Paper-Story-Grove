@@ -1,0 +1,3 @@
+const http=require('http'), fs=require('fs'),path=require('path');
+const root=process.cwd();
+http.createServer((req,res)=>{let p=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0] === '/'?'/index.html':req.url.split('?')[0]));if(!p.startsWith(root+path.sep)){res.writeHead(403);return res.end();}fs.readFile(p,(e,b)=>{if(e){res.writeHead(404);return res.end();}res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml','.webp':'image/webp','.mp4':'video/mp4','.woff2':'font/woff2'})[path.extname(p)]||'application/octet-stream');res.end(b);});}).listen(8000,'127.0.0.1',()=>console.log('http://127.0.0.1:8000'));

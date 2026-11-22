@@ -1,0 +1,10 @@
+[
+    {
+        "sha256":  "8FA524C08635D7E3DED2782F66682042C0B8AD10B2B4ADF993C050F144885F6C",
+        "path":  "js/stories.js"
+    },
+    {
+        "sha256":  "93CED6A2B082361DF12224C743CC24BF38EED4D968A5BAC5497A94A349669112",
+        "path":  "js/art.js"
+    }
+]

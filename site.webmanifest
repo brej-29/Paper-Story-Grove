@@ -1,7 +1,7 @@
 {
-  "name": "Three Little Stories",
-  "short_name": "Little Stories",
-  "description": "Interactive picture books for young children: Kerala, Tamil Nadu and a bedtime cloud.",
+  "name": "Paper Story Grove",
+  "short_name": "Story Grove",
+  "description": "Six interactive picture books with hand-drawn and painted editions.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

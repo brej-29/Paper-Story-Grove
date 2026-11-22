@@ -1,0 +1,18 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+let queued=[],jobs=new Map(),tid=0,states=[],marks=[];
+const local={name:'Local English',lang:'en-IN',voiceURI:'local',localService:true},remote={name:'Online Natural',lang:'en-US',voiceURI:'remote',localService:false};
+const speech={getVoices:()=>[remote,local],cancel(){},speak(u){queued.push(u);}};
+const ctx=vm.createContext({window:{speechSynthesis:speech},SpeechSynthesisUtterance:function(text){this.text=text},setTimeout(fn){jobs.set(++tid,fn);return tid},clearTimeout(id){jobs.delete(id)}});
+vm.runInContext(fs.readFileSync('js/narration.js','utf8'),ctx);const n=vm.runInContext('Narrator',ctx);
+n.init((s,m)=>states.push([s,m]),p=>marks.push(p));
+n.load(['Title.','First sentence. Second sentence!','Last paragraph.'],'test/page',true);
+assert.equal(queued.at(-1).text,'Title.');assert.equal(queued.at(-1).voice,local);
+const stale=queued.at(-1);n.pause();assert.equal(n.state,'paused');stale.onend();assert.equal(jobs.size,0);
+n.play();assert.equal(queued.at(-1).text,'Title.');queued.at(-1).onend();const fn=[...jobs.values()][0];jobs.clear();fn();assert.equal(queued.at(-1).text,'First sentence.');
+n.pause();n.play();assert.equal(queued.at(-1).text,'First sentence.');
+n.replay();assert.equal(queued.at(-1).text,'Title.');
+n.configure({speed:1.15,voice:'remote',online:true});assert.equal(queued.at(-1).voice,remote);assert.equal(queued.at(-1).rate,.94*1.15);
+const prior=queued.at(-1);n.load(['Other page.'],'other/page',false);prior.onend();assert.equal(jobs.size,0);assert.equal(n.state,'idle');
+n.play();assert.equal(queued.at(-1).text,'Other page.');n.stop();assert.equal(n.state,'idle');
+speech.getVoices=()=>[];n.play();assert.equal(n.state,'error');assert.match(states.at(-1)[1],/No available voice/);
+console.log('PASS: local voice default, opt-in remote, sentence progression, pause/resume, replay, speed, stale callback cancellation, navigation and no-voice fallback.');

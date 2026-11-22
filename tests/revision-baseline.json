@@ -1,0 +1,18 @@
+[
+    {
+        "sha256":  "8FA524C08635D7E3DED2782F66682042C0B8AD10B2B4ADF993C050F144885F6C",
+        "path":  "js/stories.js"
+    },
+    {
+        "sha256":  "93CED6A2B082361DF12224C743CC24BF38EED4D968A5BAC5497A94A349669112",
+        "path":  "js/art.js"
+    },
+    {
+        "sha256":  "5AE704DE23D3621BCA74B2B327451F8D1CE524C602E87A5CE3D0F3F5A9410545",
+        "path":  "js/narration.js"
+    },
+    {
+        "sha256":  "4A60FFE8F2E90F69B8BA64DA21A31AD04A098BE02AE4A2DA6472F334A6BED369",
+        "path":  "js/audio-manifest.js"
+    }
+]

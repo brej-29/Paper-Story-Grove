@@ -5,8 +5,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- saved state (works without storage too) ---------- */
-  let S = { finds: {}, ends: {}, sound: true, read: false, calm: reduced };
+  let S = { painted: false, finds: {}, ends: {}, sound: true, volume: 22, musicVolume: 12, read: false, calm: reduced };
   try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* private mode */ }
+  if (reduced) S.calm = true;
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
 
   /* ---------- scene rendering ---------- */
@@ -24,7 +25,8 @@
       TOTAL[st.id] += st.findIds[pid].length;
     }
   });
-  const foundIn = (st, pid) => st.findIds[pid].filter(id => S.finds[`${st.id}/${pid}/${id}`]).length;
+  const findKey = (book, pid, id) => (book.painted && !S.painted ? 'paper/' : '') + book.id + '/' + pid + '/' + id;
+  const foundIn = (st, pid) => st.findIds[pid].filter(id => S.finds[findKey(st, pid, id)]).length;
   const foundAll = st => Object.keys(st.pages).reduce((n, pid) => n + foundIn(st, pid), 0);
   const endsOf = st => Object.values(st.pages).filter(p => p.end).map(p => p.end);
 
@@ -33,62 +35,101 @@
   const applyPrefs = () => {
     setTog($('#tSound'), S.sound); setTog($('#tRead'), S.read); setTog($('#tCalm'), S.calm);
     document.documentElement.dataset.motion = S.calm ? 'calm' : 'full';
-    Sound.setOn(S.sound);
+    if (typeof Living !== 'undefined') Living.setCalm(S.calm);
+    Sound.setOn(S.sound && Narrator.state !== 'playing');
   };
-  $('#tSound').onclick = () => { S.sound = !S.sound; save(); applyPrefs(); if (S.sound) Sound.fx('pop'); };
+  $('#soundVolume').value = S.volume;
+  $('#musicVolume').value = S.musicVolume;
+  Sound.setVolume(S.volume / 100); Sound.setMusicVolume(S.musicVolume / 100);
+  $('#soundVolume').oninput = e => { S.volume = Number(e.target.value); Sound.setVolume(S.volume / 100); save(); };
+  $('#musicVolume').oninput = e => { S.musicVolume = Number(e.target.value); Sound.setMusicVolume(S.musicVolume / 100); save(); };
+  $('#stopSound').onclick = () => { S.sound = false; S.read = false; Narrator.stop(); Sound.stop(); save(); applyPrefs(); };
+  $('#tSound').onclick = () => { S.sound = !S.sound; save(); applyPrefs(); if (S.sound) { Sound.music(st ? musicFor(st.id) : 'home'); Sound.fx('pop'); } };
   $('#tCalm').onclick = () => { S.calm = !S.calm; save(); applyPrefs(); };
-  const canSpeak = 'speechSynthesis' in window;
-  if (!canSpeak) $('#tRead').hidden = true;
-  $('#tRead').onclick = () => { S.read = !S.read; save(); applyPrefs(); if (S.read) readPage(); else speechSynthesis.cancel(); };
-
-  const speak = text => {
-    if (!S.read || !canSpeak) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[“”]/g, '"'));
-    const vs = speechSynthesis.getVoices();
-    u.voice = vs.find(v => /en[-_]IN/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
-    u.rate = .85; u.pitch = 1.1;
-    speechSynthesis.speak(u);
+  $('#tRead').onclick = () => { S.read = !S.read; save(); applyPrefs(); $('#voicePanel').open = S.read; if (st) { if (S.read) Narrator.play(); else Narrator.stop(); } };
+  const voiceSelect = $('#readVoice');
+  const refreshVoices = () => {
+    const selected = voiceSelect.value;
+    voiceSelect.replaceChildren(new Option($('#onlineVoices').checked ? 'Automatic voice' : 'Automatic local voice', ''));
+    Narrator.voices().forEach(v => voiceSelect.add(new Option(v.name + ' (' + v.lang + ')' + (v.localService ? '' : ' - online'), v.voiceURI)));
+    if ([...voiceSelect.options].some(o => o.value === selected)) voiceSelect.value = selected;
   };
+  const configureVoice = () => {
+    Narrator.configure({ speed: Number($('#readSpeed').value), voice: voiceSelect.value, online: $('#onlineVoices').checked });
+  };
+  $('#readSpeed').onchange = configureVoice;
+  voiceSelect.onchange = configureVoice;
+  $('#onlineVoices').onchange = () => { configureVoice(); refreshVoices(); };
+  if (window.speechSynthesis) speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+  refreshVoices();
+  Narrator.init((state, message) => {
+    $('#readPlay').textContent = state === 'playing' ? 'Pause' : state === 'paused' ? 'Resume' : 'Play';
+    $('#readStatus').textContent = message || ({playing:'Reading this page', ended:'Page finished. Turn when you are ready.', idle:'Ready to read', paused:'Paused'}[state] || '');
+    Sound.setOn(S.sound && state !== 'playing');
+  }, paragraph => {
+    document.querySelectorAll('[data-read-part]').forEach(el => el.classList.toggle('reading-now', Number(el.dataset.readPart) === paragraph));
+    if (typeof Living !== 'undefined') Living.focus(paragraph);
+  });
+  $('#readPlay').onclick = () => { if (Narrator.state === 'playing') Narrator.pause(); else Narrator.play(); };
+  $('#readReplay').onclick = () => Narrator.replay();
 
   /* ---------- shelf ---------- */
   const medal = on => `<svg class="medal${on ? ' on' : ''}" viewBox="-12 -12 24 24" aria-hidden="true">${star(9, 'currentColor')}</svg>`;
   const renderShelf = () => {
-    $('#books').innerHTML = STORIES.map((st, i) => {
+    document.body.dataset.art = S.painted ? 'painted' : 'paper';
+    $('#paintEdition').checked = S.painted;
+    $('#paperEdition').checked = !S.painted;
+    $('#books').innerHTML = STORIES.filter(book => !S.painted || book.painted).map((st, i) => {
       const ends = endsOf(st), got = ends.filter(e => S.ends[`${st.id}/${e.id}`]).length, f = foundAll(st);
-      return `<button class="book" data-story="${st.id}" style="--ink:${st.ink};--accent:${st.accent};--tilt:${[-2, 1.2, -1.2][i]}deg">
-        <span class="cover">${sceneSVG(st.cover(), '', true)}</span>
+      return `<button class="book" data-story="${st.id}" style="--ink:${st.ink};--accent:${st.accent};--tilt:${[-2, 1.2, -1.2][i % 3]}deg">
+        <span class="cover" inert>${sceneSVG(st.cover(!S.painted), '', true)}</span>
         <span class="label"><span class="t">${st.title}</span><span class="p">${st.place}</span></span>
         <span class="progress">${ends.map(e => medal(S.ends[`${st.id}/${e.id}`])).join('')}
           <span>${got} of ${ends.length} endings, ${f} of ${TOTAL[st.id]} surprises found</span></span>
       </button>`;
     }).join('');
   };
+  $('#paperPanorama').innerHTML = PaperScenes.frontispiece();
+  function changeEdition() {
+    S.painted = $('#paintEdition').checked;
+    save();
+    renderShelf();
+  }
+  $('#paperEdition').onchange = changeEdition;
+  $('#paintEdition').onchange = changeEdition;
   $('#books').onclick = e => { const b = e.target.closest('.book'); if (b) openStory(b.dataset.story); };
 
-  $('#notesBody').innerHTML = GROWNUPS.map(([t, d]) => `<h3>${t}</h3><p>${d}</p>`).join('');
+  const bookNotes = [
+    ...GROWNUPS,
+    ['Anu and the Last Little Lamp', 'During Karthigai Deepam, families in Tamil Nadu light small clay lamps. Paatti, Anu’s grandmother, lights the lamps in this story. Anu chooses how to welcome their neighbour home. Where would your child put a light for someone they love?'],
+    ['Dev and the Extra Banana Leaf', 'A sadya is a feast served on banana leaves. At this family’s Onam meal in Kerala, Dev needs a place for his cousin before the rice arrives. Try laying out pretend leaves with your fingers. Can you find room for one more?'],
+    ['Moss and the Kite That Sneezed', 'Moss is a dragon who mends kites. When his sneeze tears Mouse’s kite, the two friends work out how to mend it together. Trace the shape of your child’s new kite in the air, then give it a little breeze.']
+  ];
+  $('#notesBody').innerHTML = bookNotes.map(([title, note]) =>
+    `<details><summary>${esc(title)}</summary><p>${esc(note)}</p></details>`
+  ).join('');
   $('#grown').onclick = () => $('#notes').showModal();
 
   /* ---------- reader ---------- */
-  let st = null, hist = [], tapped = new Set(), busy = false;
+  let st = null, hist = [], tapped = new Set(), busy = false, transition = 0;
   const page = () => st.pages[hist.at(-1)];
 
   const sheetHTML = pid => {
     const p = st.pages[pid];
     return `<article class="sheet" tabindex="-1" aria-label="${esc(p.title)}">
-      <div class="pic">${sceneSVG(p.scene(), 'Picture: ' + p.title)}<p class="caption" aria-live="polite"></p></div>
+      <div class="pic">${sceneSVG(p.scene(!S.painted), 'Picture: ' + p.title)}<p class="caption" aria-live="polite"></p></div>
       <div class="words">
-        <h2>${p.title}</h2>
-        ${p.text.map(t => `<p>${t}</p>`).join('')}
+        <h2 data-read-part="0">${p.title}</h2>
+        ${p.text.map((t, i) => `<p data-read-part="${i + 1}">${t}</p>`).join('')}
         ${p.tip ? `<p class="tip">${p.tip}</p>` : ''}
-        ${p.choice ? `<p class="ask">${p.ask}</p><div class="choices">${p.choice.map(c =>
-      `<button class="choice" data-to="${c.to}"><svg viewBox="-36 -36 72 72" aria-hidden="true">${c.icon()}</svg><span>${c.label}</span></button>`).join('')}</div>` : ''}
+        ${p.choice ? `<p class="ask" data-read-part="${p.text.length + 1}">${p.ask}</p><div class="choices">${p.choice.map((c, i) =>
+      `<button class="choice" data-read-part="${p.text.length + 2 + i}" data-to="${c.to}"><svg viewBox="-36 -36 72 72" aria-hidden="true">${c.icon()}</svg><span>${c.label}</span></button>`).join('')}</div>` : ''}
         ${p.end ? `<div class="theend"><p class="fin">The end</p><p class="got">Ending found: <b>${p.end.name}</b></p>
           <div class="two"><button class="btn" data-other>Try the other way</button><button class="btn ghost" data-home>All stories</button></div></div>` : ''}
       </div></article>`;
   };
 
-  const readPage = () => { const p = page(); speak([p.title + '.', ...p.text, p.ask || ''].join(' ')); };
+  const readPage = () => { if (!st) return; const p = page(); Narrator.load([p.title + '.', ...p.text, ...(p.ask ? [p.ask, ...p.choice.map(c => c.label)] : [])], st.id + '/' + hist.at(-1), S.read); };
 
   const updateNav = () => {
     const pid = hist.at(-1), p = page(), n = st.findIds[pid].length, f = foundIn(st, pid);
@@ -102,24 +143,27 @@
 
   const show = (pid, dir) => {
     if (busy) return;
+    if (typeof Living !== 'undefined') Living.unmount();
+    const turn = ++transition;
     const stage = $('#stage'), old = stage.querySelector('.sheet');
     stage.insertAdjacentHTML(dir < 0 ? 'beforeend' : 'afterbegin', sheetHTML(pid));
     const neu = dir < 0 ? stage.lastElementChild : stage.firstElementChild;
     tapped = new Set();
     const p = st.pages[pid];
-    if (p.end) { S.ends[`${st.id}/${p.end.id}`] = 1; save(); setTimeout(() => Sound.fx('win'), 700); }
+    if (p.end) { S.ends[`${st.id}/${p.end.id}`] = 1; save(); setTimeout(() => { if (turn === transition) Sound.fx('win'); }, 700); }
     updateNav();
-    const done = () => { if (old) old.remove(); busy = false; neu.focus({ preventScroll: true }); };
+    const done = () => { if (turn !== transition) return; if (old) old.remove(); busy = false; neu.focus({ preventScroll: true }); };
     if (old && dir) {
       busy = true; Sound.fx('turn');
       const mover = dir < 0 ? neu : old;
       mover.classList.add(dir < 0 ? 'turn-in' : 'turn-out');
       old.inert = true;
       let fired = false;
-      const end = () => { if (fired) return; fired = true; mover.classList.remove('turn-in', 'turn-out'); done(); };
+      const end = () => { if (fired || turn !== transition) return; fired = true; mover.classList.remove('turn-in', 'turn-out'); done(); };
       mover.addEventListener('animationend', e => { if (e.target === mover) end(); });
       setTimeout(end, 1100); // safety net if the animation never runs
     } else done();
+    if (S.painted && typeof Living !== 'undefined') Living.mount(neu.querySelector('.pic'));
     readPage();
   };
 
@@ -127,23 +171,32 @@
   const back = () => { if (busy || hist.length < 2) return; hist.pop(); show(hist.at(-1), -1); };
   const next = () => { const p = page(); if (p.next) go(p.next); };
 
+  const musicFor = id => id;
   const openStory = id => {
+    busy = false; ++transition;
     st = STORIES.find(s => s.id === id); hist = [st.start];
     const r = $('#reader');
+    document.body.dataset.view = 'reader';
+    $('#voicePanel').open = S.read;
+    r.dataset.edition = S.painted && st.painted ? 'illustrated' : 'original';
     r.style.setProperty('--ink', st.ink); r.style.setProperty('--paper', st.paper); r.style.setProperty('--accent', st.accent);
     document.body.style.setProperty('--bg', st.ink);
     $('#shelf').hidden = true; r.hidden = false; $('#home').hidden = false;
     $('#barTitle').textContent = st.title;
     $('#stage').innerHTML = '';
-    Sound.music(st.id); Sound.fx('turn');
+    Sound.music(musicFor(st.id)); Sound.fx('turn');
     show(st.start, 0);
     scrollTo(0, 0);
   };
 
   const goHome = () => {
-    if (canSpeak) speechSynthesis.cancel();
+    if (typeof Living !== 'undefined') Living.unmount();
+    busy = false; ++transition;
+    Narrator.stop();
+    document.body.dataset.view = 'library';
     const last = st && st.id; st = null;
     document.body.style.removeProperty('--bg');
+    $('#stage').innerHTML = '';
     $('#reader').hidden = true; $('#shelf').hidden = false; $('#home').hidden = true;
     $('#barTitle').textContent = '';
     renderShelf(); Sound.music('home');
@@ -154,7 +207,7 @@
   $('#next').onclick = next; $('#prev').onclick = back; $('#home').onclick = goHome;
   $('#hint').onclick = () => {
     const finds = [...document.querySelectorAll('#stage .sheet:not([inert]) .find')];
-    const pid = hist.at(-1), left = finds.filter(f => !S.finds[`${st.id}/${pid}/${f.dataset.id}`]);
+    const pid = hist.at(-1), left = finds.filter(f => !S.finds[findKey(st, pid, f.dataset.id)]);
     (left.length ? left : finds).forEach(f => { f.classList.remove('hint'); void f.getBoundingClientRect(); f.classList.add('hint'); });
     if (S.calm) caption(left.length ? 'Look for: ' + left.map(f => f.getAttribute('aria-label').toLowerCase()).join(', ') : 'You found everything here!');
   };
@@ -170,6 +223,8 @@
     const pid = hist.at(-1), p = page(), id = f.dataset.id;
     f.classList.remove('go', 'hint'); void f.getBoundingClientRect(); f.classList.add('go');
     Sound.fx(f.dataset.snd);
+    const ring = f.querySelector?.('.discovery-ring');
+    if (ring && typeof Living !== 'undefined') Living.poke(Number(ring.getAttribute('cx')), Number(ring.getAttribute('cy')));
     let say = f.dataset.say;
     if (f.dataset.reveal) f.ownerSVGElement.querySelectorAll(f.dataset.reveal).forEach(el => el.classList.add('show'));
     tapped.add(id);
@@ -178,8 +233,8 @@
       f.ownerSVGElement.querySelectorAll('.kborder').forEach(el => el.classList.add('show'));
       setTimeout(() => Sound.fx('win'), 400);
     }
-    caption(say); speak(say);
-    S.finds[`${st.id}/${pid}/${id}`] = 1; save(); updateNav();
+    caption(say);
+    S.finds[findKey(st, pid, id)] = 1; save(); updateNav();
   };
 
   $('#stage').addEventListener('click', e => {
@@ -196,7 +251,7 @@
   });
 
   addEventListener('keydown', e => {
-    if (!st || $('#notes').open || e.target.closest('.choice')) return;
+    if (!st || $('#notes').open || e.target.closest('.choice, select, input, textarea')) return;
     if (e.key === 'ArrowRight') next();
     else if (e.key === 'ArrowLeft') back();
     else if (e.key === 'Escape') goHome();
@@ -221,7 +276,7 @@
   });
 
   // browsers only allow sound after a first touch or key press
-  const wake = () => { if (S.sound) Sound.music(st ? st.id : 'home'); };
+  const wake = () => { if (S.sound && Narrator.state !== 'playing') Sound.music(st ? musicFor(st.id) : 'home'); };
   addEventListener('pointerdown', wake, { once: true });
   addEventListener('keydown', wake, { once: true });
 

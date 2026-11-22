@@ -1,9 +1,12 @@
 'use strict';
 /* All sound is synthesised with the Web Audio API: no audio files. */
 const Sound = (() => {
-  let ctx, master, musicBus, on = true, song = null, timer = null, nextT = 0, step = 0, rainSrc = null, noiseBuf;
+  let ctx, master, musicBus, on = true, level = .22, musicLevel = .12, song = null, timer = null, nextT = 0, step = 0, rainSrc = null, noiseBuf;
 
   const SONGS = {
+    'tamil-lamps': { root: 196, scale: [0, 2, 5, 7, 9], dt: .88, bar: 8, wave: 'sine', seed: 47, len: 1.3 },
+    'kerala-feast': { root: 246.94, scale: [0, 2, 4, 7, 9], dt: .64, bar: 6, wave: 'triangle', seed: 79, len: .38 },
+    'english-dragon': { root: 164.81, scale: [0, 3, 5, 7, 10], dt: .73, bar: 8, wave: 'sine', seed: 109, len: .7 },
     // root Hz, scale in semitones, seconds per step, steps per bar
     home: { root: 196, scale: [0, 2, 4, 7, 9], dt: .42, bar: 8, wave: 'sine', seed: 5, len: 1.4 },
     kerala: { root: 220, scale: [0, 2, 4, 7, 9], dt: .27, bar: 6, wave: 'triangle', seed: 11, len: .7, beat: [0, 3], rain: true },
@@ -16,10 +19,10 @@ const Sound = (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
-      master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
-      musicBus = ctx.createGain(); musicBus.gain.value = .55;
+      master = ctx.createGain(); master.gain.value = level; master.connect(ctx.destination);
+      musicBus = ctx.createGain(); musicBus.gain.value = musicLevel;
       const delay = ctx.createDelay(1), fb = ctx.createGain();
-      delay.delayTime.value = .33; fb.gain.value = .28;
+      delay.delayTime.value = .33; fb.gain.value = .08;
       musicBus.connect(master); musicBus.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(master);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
@@ -80,7 +83,7 @@ const Sound = (() => {
   const phrase = (rand, n) => {
     const p = []; let d = 2 + Math.floor(rand() * 3);
     for (let i = 0; i < n; i++) {
-      if (i && rand() < .28) { p.push(null); continue; }
+      if (i && rand() < .48) { p.push(null); continue; }
       d = Math.max(0, Math.min(9, d + Math.floor(rand() * 5) - 2));
       p.push(d);
     }
@@ -97,7 +100,7 @@ const Sound = (() => {
     const seq = [A, B, A, Cc];
     const hz = d => s.root * 2 ** ((s.scale[d % 5] + 12 * Math.floor(d / 5)) / 12);
     step = 0; nextT = ctx.currentTime + .15; song = name;
-    musicBus.gain.cancelScheduledValues(ctx.currentTime); musicBus.gain.setValueAtTime(.55, ctx.currentTime);
+    musicBus.gain.cancelScheduledValues(ctx.currentTime); musicBus.gain.setValueAtTime(musicLevel, ctx.currentTime);
     timer = setInterval(() => {
       while (nextT < ctx.currentTime + .4) {
         const bar = Math.floor(step / s.bar) % 4, i = step % s.bar, d = seq[bar][i];
@@ -111,7 +114,7 @@ const Sound = (() => {
     if (s.rain) {
       rainSrc = ctx.createBufferSource(); rainSrc.buffer = noiseBuf; rainSrc.loop = true;
       const f = ctx.createBiquadFilter(), g = ctx.createGain();
-      f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = .4; g.gain.value = .035;
+      f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = .4; g.gain.value = .004;
       rainSrc.connect(f); f.connect(g); g.connect(master); rainSrc.start();
     }
   };
@@ -124,7 +127,11 @@ const Sound = (() => {
   return {
     music(name) { this.want = name; if (name === song) { if (on) ensure(); return; } startSong(name); },
     fx(name) { if (!on || !FX[name] || !ensure()) return; FX[name](ctx.currentTime + .01); },
+    setVolume(v) { level = Math.max(0, Math.min(1, Number(v) || 0)); if (master) master.gain.setTargetAtTime(level, ctx.currentTime, .08); },
+    setMusicVolume(v) { musicLevel = Math.max(0, Math.min(.35, Number(v) || 0)); if (musicBus) musicBus.gain.setTargetAtTime(musicLevel, ctx.currentTime, .15); },
+    stop() { this.want = null; on = false; stopSong(); if (ctx) ctx.suspend(); },
     setOn(v) {
+      if (on === v) return;
       on = v;
       if (!v) { stopSong(); if (ctx) ctx.suspend(); }
       else if (this.want) startSong(this.want);
